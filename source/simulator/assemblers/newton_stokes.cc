@@ -346,7 +346,7 @@ namespace aspect
                 data.local_rhs(i) += (scalar_product(elastic_outputs->elastic_force[q],Tensor<2,dim>(scratch.grads_phi_u[i])))
                                      * JxW;
 
-              if (enable_additional_stokes_rhs)
+              if (enable_prescribed_dilation)
                 data.local_rhs(i) += (
                                        // RHS of - (div u,q) = - (R,q)
                                        - pressure_scaling
@@ -356,7 +356,7 @@ namespace aspect
 
               // Only assemble this term if we are running incompressible, otherwise this term
               // is already included on the LHS of the equation.
-              if (enable_additional_stokes_rhs && !material_model_is_compressible)
+              if (enable_prescribed_dilation && !material_model_is_compressible)
                 data.local_rhs(i) += (
                                        // RHS of momentum eqn: - \int 2/3 eta R, div v
                                        - 2.0 / 3.0 * eta
