@@ -57,10 +57,10 @@ RM = /Applications/deal.II.app/Contents/Resources/spack/opt/spack/cmake-3.20.3-o
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /Users/sliu/GoogleDrive/1_Research/Aspect/aspect_July21/Dilation/soruce
+CMAKE_SOURCE_DIR = /Users/sliu/GoogleDrive/1_Research/Aspect/aspect_July21/Dike_injection
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /Users/sliu/GoogleDrive/1_Research/Aspect/aspect_July21/Dilation/soruce
+CMAKE_BINARY_DIR = /Users/sliu/GoogleDrive/1_Research/Aspect/aspect_July21/Dike_injection
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -87,9 +87,9 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/sliu/GoogleDrive/1_Research/Aspect/aspect_July21/Dilation/soruce/CMakeFiles /Users/sliu/GoogleDrive/1_Research/Aspect/aspect_July21/Dilation/soruce//CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/sliu/GoogleDrive/1_Research/Aspect/aspect_July21/Dike_injection/CMakeFiles /Users/sliu/GoogleDrive/1_Research/Aspect/aspect_July21/Dike_injection//CMakeFiles/progress.marks
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/sliu/GoogleDrive/1_Research/Aspect/aspect_July21/Dilation/soruce/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/sliu/GoogleDrive/1_Research/Aspect/aspect_July21/Dike_injection/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -117,41 +117,41 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named dilation_term
+# Target rules for targets named dike_injection
 
 # Build rule for target.
-dilation_term: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 dilation_term
-.PHONY : dilation_term
+dike_injection: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 dike_injection
+.PHONY : dike_injection
 
 # fast build rule for target.
-dilation_term/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/dilation_term.dir/build.make CMakeFiles/dilation_term.dir/build
-.PHONY : dilation_term/fast
+dike_injection/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/dike_injection.dir/build.make CMakeFiles/dike_injection.dir/build
+.PHONY : dike_injection/fast
 
-dilation_term.o: dilation_term.cc.o
-.PHONY : dilation_term.o
+dike_injection.o: dike_injection.cc.o
+.PHONY : dike_injection.o
 
 # target to build an object file
-dilation_term.cc.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/dilation_term.dir/build.make CMakeFiles/dilation_term.dir/dilation_term.cc.o
-.PHONY : dilation_term.cc.o
+dike_injection.cc.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/dike_injection.dir/build.make CMakeFiles/dike_injection.dir/dike_injection.cc.o
+.PHONY : dike_injection.cc.o
 
-dilation_term.i: dilation_term.cc.i
-.PHONY : dilation_term.i
+dike_injection.i: dike_injection.cc.i
+.PHONY : dike_injection.i
 
 # target to preprocess a source file
-dilation_term.cc.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/dilation_term.dir/build.make CMakeFiles/dilation_term.dir/dilation_term.cc.i
-.PHONY : dilation_term.cc.i
+dike_injection.cc.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/dike_injection.dir/build.make CMakeFiles/dike_injection.dir/dike_injection.cc.i
+.PHONY : dike_injection.cc.i
 
-dilation_term.s: dilation_term.cc.s
-.PHONY : dilation_term.s
+dike_injection.s: dike_injection.cc.s
+.PHONY : dike_injection.s
 
 # target to generate assembly for a file
-dilation_term.cc.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/dilation_term.dir/build.make CMakeFiles/dilation_term.dir/dilation_term.cc.s
-.PHONY : dilation_term.cc.s
+dike_injection.cc.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/dike_injection.dir/build.make CMakeFiles/dike_injection.dir/dike_injection.cc.s
+.PHONY : dike_injection.cc.s
 
 # Help Target
 help:
@@ -161,10 +161,10 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... dilation_term"
-	@echo "... dilation_term.o"
-	@echo "... dilation_term.i"
-	@echo "... dilation_term.s"
+	@echo "... dike_injection"
+	@echo "... dike_injection.o"
+	@echo "... dike_injection.i"
+	@echo "... dike_injection.s"
 .PHONY : help
 
 
