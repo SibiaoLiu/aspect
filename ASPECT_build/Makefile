@@ -99,16 +99,6 @@ rebuild_cache:
 rebuild_cache/fast: rebuild_cache
 .PHONY : rebuild_cache/fast
 
-# Special rule for the target edit_cache
-edit_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
-	/Applications/deal.II.app/Contents/Resources/spack/opt/spack/cmake-3.20.3-oa76/bin/ccmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : edit_cache
-
-# Special rule for the target edit_cache
-edit_cache/fast: edit_cache
-.PHONY : edit_cache/fast
-
 # Special rule for the target install/strip
 install/strip: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
@@ -120,6 +110,16 @@ install/strip/fast: preinstall/fast
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
 	/Applications/deal.II.app/Contents/Resources/spack/opt/spack/cmake-3.20.3-oa76/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
 .PHONY : install/strip/fast
+
+# Special rule for the target edit_cache
+edit_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake cache editor..."
+	/Applications/deal.II.app/Contents/Resources/spack/opt/spack/cmake-3.20.3-oa76/bin/ccmake -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : edit_cache
+
+# Special rule for the target edit_cache
+edit_cache/fast: edit_cache
+.PHONY : edit_cache/fast
 
 # Special rule for the target list_install_components
 list_install_components:
@@ -160,19 +160,6 @@ preinstall/fast:
 depend:
 	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
-
-#=============================================================================
-# Target rules for targets named generate_reference_output
-
-# Build rule for target.
-generate_reference_output: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 generate_reference_output
-.PHONY : generate_reference_output
-
-# fast build rule for target.
-generate_reference_output/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_reference_output.dir/build.make CMakeFiles/generate_reference_output.dir/build
-.PHONY : generate_reference_output/fast
 
 #=============================================================================
 # Target rules for targets named aspect
@@ -227,6 +214,19 @@ debug/fast:
 .PHONY : debug/fast
 
 #=============================================================================
+# Target rules for targets named generate_reference_output
+
+# Build rule for target.
+generate_reference_output: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 generate_reference_output
+.PHONY : generate_reference_output
+
+# fast build rule for target.
+generate_reference_output/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/generate_reference_output.dir/build.make CMakeFiles/generate_reference_output.dir/build
+.PHONY : generate_reference_output/fast
+
+#=============================================================================
 # Target rules for targets named indent
 
 # Build rule for target.
@@ -238,6 +238,19 @@ indent: cmake_check_build_system
 indent/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/indent.dir/build.make CMakeFiles/indent.dir/build
 .PHONY : indent/fast
+
+#=============================================================================
+# Target rules for targets named run_tests
+
+# Build rule for target.
+run_tests: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 run_tests
+.PHONY : run_tests
+
+# fast build rule for target.
+run_tests/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/run_tests.dir/build.make CMakeFiles/run_tests.dir/build
+.PHONY : run_tests/fast
 
 #=============================================================================
 # Target rules for targets named run_unit_tests
@@ -3036,6 +3049,7 @@ help:
 	@echo "... indent"
 	@echo "... info"
 	@echo "... release"
+	@echo "... run_tests"
 	@echo "... run_unit_tests"
 	@echo "... setup_tests"
 	@echo "... test"

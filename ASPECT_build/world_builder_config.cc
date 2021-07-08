@@ -19,17 +19,17 @@
 
 #include "world_builder/config.h"
 
-using namespace WorldBuilder;
+namespace WorldBuilder
+{
+  const std::string Version::MAJOR = "0";
+  const std::string Version::MINOR = "4";
+  const std::string Version::PATCH = "0";
+  const std::string Version::LABEL = "";
 
-const std::string Version::MAJOR = "0";
-const std::string Version::MINOR = "4";
-const std::string Version::PATCH = "0";
-const std::string Version::LABEL = "";
+  const std::string Version::GIT_SHA1 = "";
+  const std::string Version::GIT_BRANCH = "";
+  const std::string Version::GIT_DATE = "";
+  const std::string Version::GIT_COMMIT_SUBJECT = "";
 
-const std::string Version::GIT_SHA1 = "";
-const std::string Version::GIT_BRANCH = "";
-const std::string Version::GIT_DATE = "";
-const std::string Version::GIT_COMMIT_SUBJECT = "";
-
-const std::string Data::WORLD_BUILDER_SOURCE_DIR = "/Users/sliu/GoogleDrive/1_Research/Aspect/aspect_July21/contrib/world_builder"; 
-
+  const std::string Data::WORLD_BUILDER_SOURCE_DIR = "/Users/sliu/GoogleDrive/1_Research/Aspect/aspect_July21/contrib/world_builder";
+}
