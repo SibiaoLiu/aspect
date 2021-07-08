@@ -39,11 +39,11 @@
 /**
  * Full sha1 revision of the current git HEAD.
  */
-#define ASPECT_GIT_REVISION "6ab11e12f0df49cc46e18f867c3aee5817c4a291"
+#define ASPECT_GIT_REVISION "3e05fd70eb69d8e0295befc405421e822a04e574"
 
 /**
  * Short sha1 revision of the current git HEAD.
  */
-#define ASPECT_GIT_SHORTREV "6ab11e12f"
+#define ASPECT_GIT_SHORTREV "3e05fd70e"
 
 #endif

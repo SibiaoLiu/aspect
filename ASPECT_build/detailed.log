@@ -2,7 +2,7 @@
 #
 #  ASPECT configuration:
 #        ASPECT_VERSION:            2.4.0-pre
-#        GIT REVISION:              6ab11e12f (master)
+#        GIT REVISION:              3e05fd70e (master)
 #        CMAKE_BUILD_TYPE:          Debug
 #
 #        DEAL_II_DIR:               /Applications/deal.II.app/Contents/Resources/Libraries/lib/cmake/deal.II
