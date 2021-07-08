@@ -1,5 +1,5 @@
 /*
-  Copyright (C) 2011 - 2018 by the authors of the ASPECT code.
+  Copyright (C) 2019 - 2021 by the authors of the ASPECT code.
   This file is part of ASPECT.
   ASPECT is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -22,9 +22,9 @@
 #include <deal.II/base/function_lib.h>
 #include <deal.II/base/parsed_function.h>
 #include <aspect/heating_model/interface.h>
-#include <aspect/simulator_access.h>
 #include <aspect/material_model/visco_plastic.h>
 
+/* Head file for dilation term*/
 namespace aspect
 {
   namespace MaterialModel
@@ -33,9 +33,10 @@ namespace aspect
 
     /**
      * This material model takes any other material model as a base model,
-     * and adds additional material model outputs defining a source term
-     * for the mass conservation equations that can be defined as a
-     * function depending on position and time in the input file.
+     * and adds additional material model outputs defining a dike injection
+     * region of magma via a dilation term applied the Stokes equations that
+     * can be defined as a function depending on position and time in the 
+     * input file.
      *
      * The method is described in the following paper:
      * @code
@@ -55,7 +56,7 @@ namespace aspect
      */
 
     template <int dim>
-    class DilationTerm : public MaterialModel::Interface<dim>, public ::aspect::SimulatorAccess<dim>
+    class PrescribedDilation : public MaterialModel::Interface<dim>, public ::aspect::SimulatorAccess<dim>
     {
       public:
         /**
@@ -65,7 +66,7 @@ namespace aspect
         void initialize();
 
         /**
-         * Update the base model and injection function at the beginning of
+         * Update the base model and dilation function at the beginning of
          * each timestep.
          */
         virtual
@@ -81,37 +82,34 @@ namespace aspect
                   typename Interface<dim>::MaterialModelOutputs &out) const;
         
         /**
-         * Method to declare parameters related to depth-dependent model
+         * Declare the parameters through input files.
          */
         static void
         declare_parameters (ParameterHandler &prm);
 
         /**
-         * Method to parse parameters related to depth-dependent model
+         * Parse parameters through the input file
          */
         virtual void
         parse_parameters (ParameterHandler &prm);
 
         /**
-         * Method that indicates whether material is compressible. Depth dependent model is compressible
-         * if and only if base model is compressible.
+         * Indicate whether material is compressible only based on the base model.
          */
         virtual bool is_compressible () const;
 
         /**
-         * Method to calculate reference viscosity for the depth-dependent model. The reference
-         * viscosity is determined by evaluating the depth-dependent part of the viscosity at
-         * the mean depth of the model.
+         * Method to calculate reference viscosity.
          */
         virtual double reference_viscosity () const;
-
+        
         virtual
         void
         create_additional_named_outputs (MaterialModel::MaterialModelOutputs<dim> &out) const;
 
       private:
         /**
-         * Parsed function that specifies the amount of material that is injected
+         * Parsed function that specifies the region and amount of material that is injected
          * into the model.
          */
         Functions::ParsedFunction<dim> injection_function;
@@ -124,7 +122,7 @@ namespace aspect
   }
 }
 
-
+/* Head file for latent heat term*/
 namespace aspect
 {
   namespace HeatingModel
@@ -132,12 +130,11 @@ namespace aspect
     using namespace dealii;
 
     /**
-     * A class that implements the heating related to the injection of 
-     * melt into the model. It takes the amount of material added on the
-     * right-hand side of the mass conservation equation and adds the
-     * corresponding heating terms to the energy equation (considering
-     * the latent heat of crystallization and the different temeprature
-     * of the injected melt). 
+     * A class that implements the latent heat released during crystallization 
+     * of the melt lens and heating by melt injection into the model. It takes 
+     * the amount of material added on the right-hand side of the Stokes equation 
+     * and adds the corresponding heating terms to the energy equation (considering
+     * the latent heat of crystallization and the different temeprature of the injected melt). 
      *
      * @ingroup HeatingModels
      */
@@ -185,48 +182,49 @@ namespace aspect
   }
 }
 
-
 namespace aspect
 {
   namespace MaterialModel
   {
     template <int dim>
     void
-    DilationTerm<dim>::initialize()
+    PrescribedDilation<dim>::initialize()
     {
       base_model->initialize();
     }
 
-
     template <int dim>
     void
-    DilationTerm<dim>::update()
+    PrescribedDilation<dim>::update()
     {
       base_model->update();
-
-      // we get time passed as seconds (always) but may want
-      // to reinterpret it in years
-      // No need anymore---05.21
-      //if (this->convert_output_to_years())
-      //  injection_function.set_time (this->get_time() / year_in_seconds);
-      //else
-      //  injection_function.set_time (this->get_time());
     }
 
     template <int dim>
     void
-    DilationTerm<dim>::evaluate(const typename Interface<dim>::MaterialModelInputs &in,
+    PrescribedDilation<dim>::evaluate(const typename Interface<dim>::MaterialModelInputs &in,
                                 typename Interface<dim>::MaterialModelOutputs &out) const
     {
       // fill variable out with the results form the base material model
       base_model -> evaluate(in,out);
 
       MaterialModel::AdditionalMaterialOutputsStokesRHS<dim>
-      *force = out.template get_additional_output<MaterialModel::AdditionalMaterialOutputsStokesRHS<dim> >();
-
-      for (unsigned int i=0; i < in.position.size(); ++i)
+      *force = 
+        (this->get_parameters().enable_additional_stokes_rhs)
+        ? out.template get_additional_output<MaterialModel::AdditionalMaterialOutputsStokesRHS<dim> >()
+        : nullptr;
+      
+      MaterialModel::PrescribedPlasticDilation<dim>
+      *prescribed_dilation =
+        (this->get_parameters().enable_prescribed_dilation)
+        ? out.template get_additional_output<MaterialModel::PrescribedPlasticDilation<dim> >()
+        : nullptr;
+      
+      for (unsigned int i=0; i < in.n_evaluation_points(); ++i)
         {
-          if (force)
+          // In case a simple rhs term is required to add in the mass eq.(& momentum eq.)
+          // if "enable Enable additional Stokes RHS " is on
+          if (force != nullptr)
             {
               for (unsigned int d=0; d < dim; ++d)
                 force->rhs_u[i][d] = 0;
@@ -237,16 +235,36 @@ namespace aspect
               else
             	  force->rhs_p[i] = - injection_function.value(in.position[i]);
             }
+
+          // Change in composition due to chemical reactions at the
+          // given positions. The term reaction_terms[i][c] is the
+          // change in compositional field c at point i.
+          //    for (unsigned int c=0; c<in.composition[i].size(); ++c)
+          //     out.reaction_terms[i][c] = 0.0;
+          
+          // "Enable prescribed dilation" should be on
+          // Here, the injection rate R (m/s or m/yr) is added to the rhs of mass equation
+          // i.e.,-div(u,q) = -(R, q)
+          // Meanwhile, the term - 2.0 / 3.0 * eta * (R, div v) is added to the RHS of the
+          // momentum equation (if the model is incompressible), otherwise this term is
+          // already present on the left side.
+          if(prescribed_dilation != nullptr)
+          {
+            if (this->convert_output_to_years())
+            	  prescribed_dilation->dilation[i] = injection_function.value(in.position[i]) / year_in_seconds;
+            else
+            	  prescribed_dilation->dilation[i] = injection_function.value(in.position[i]);
+          }
         }
     }
 
     template <int dim>
     void
-    DilationTerm<dim>::declare_parameters (ParameterHandler &prm)
+    PrescribedDilation<dim>::declare_parameters (ParameterHandler &prm)
     {
       prm.enter_subsection("Material model");
       {
-        prm.enter_subsection("Dilation term");
+        prm.enter_subsection("Prescribed dilation");
         {
           prm.declare_entry("Base model","simple",
                             Patterns::Selection(MaterialModel::get_valid_model_names_pattern<dim>()),
@@ -269,14 +287,14 @@ namespace aspect
 
     template <int dim>
     void
-    DilationTerm<dim>::parse_parameters (ParameterHandler &prm)
+    PrescribedDilation<dim>::parse_parameters (ParameterHandler &prm)
     {
       prm.enter_subsection("Material model");
       {
-        prm.enter_subsection("Dilation term");
+        prm.enter_subsection("Prescribed dilation");
         {
-          Assert( prm.get("Base model") != "dilation term",
-                  ExcMessage("You may not use ``dilation term'' as the base model for "
+          Assert( prm.get("Base model") != "prescribed dilation",
+                  ExcMessage("You may not use ``prescribed dilation'' as the base model for "
                              "itself.") );
 
           // create the base model and initialize its SimulatorAccess base
@@ -307,15 +325,15 @@ namespace aspect
       }
       prm.leave_subsection();
 
-      /* After parsing the parameters for averaging, it is essential to parse
-      parameters related to the base model. */
+      // After parsing the parameters for averaging, it is essential 
+      // to parse parameters related to the base model.
       base_model->parse_parameters(prm);
       this->model_dependence = base_model->get_model_dependence();
     }
 
     template <int dim>
     bool
-    DilationTerm<dim>::
+    PrescribedDilation<dim>::
     is_compressible () const
     {
       return base_model->is_compressible();
@@ -323,7 +341,7 @@ namespace aspect
 
     template <int dim>
     double
-    DilationTerm<dim>::
+    PrescribedDilation<dim>::
     reference_viscosity() const
     {
       // if material is injected, the divergence of the velocity is not zero anymore
@@ -332,21 +350,37 @@ namespace aspect
 
     template <int dim>
     void
-    DilationTerm<dim>::create_additional_named_outputs (MaterialModel::MaterialModelOutputs<dim> &out) const
+    PrescribedDilation<dim>::create_additional_named_outputs (MaterialModel::MaterialModelOutputs<dim> &out) const
     {
       // Because we use the force outputs in the heating model, we always have to attach them, not only in the
       // places where the RHS of the Stokes system is computed.
-      if (out.template get_additional_output<AdditionalMaterialOutputsStokesRHS<dim> >() == nullptr)
-        {
-          //const unsigned int n_points = out.viscosities.size();
-    	  const unsigned int n_points = out.n_evaluation_points();
-          //c++11 update_Mar2021: replace emplace_back from push_back;
-          //avoid using 'new', use make_unique/make_shared;
-          //Here, std::make_shared does not work any more.
+      const unsigned int n_points = out.n_evaluation_points();
 
-          out.additional_outputs.emplace_back(
-        	std_cxx14::make_unique<MaterialModel::AdditionalMaterialOutputsStokesRHS<dim> > (n_points));
+      //Stokes RHS
+      if (this->get_parameters().enable_additional_stokes_rhs
+          && out.template get_additional_output<MaterialModel::AdditionalMaterialOutputsStokesRHS<dim> >() == nullptr)
+        {
+          out.additional_outputs.push_back(
+            std_cxx14::make_unique<MaterialModel::AdditionalMaterialOutputsStokesRHS<dim>> (n_points));
         }
+
+      Assert(!this->get_parameters().enable_additional_stokes_rhs
+             ||
+             out.template get_additional_output<MaterialModel::AdditionalMaterialOutputsStokesRHS<dim> >()->rhs_u.size()
+             == n_points, ExcInternalError());
+
+      // prescribed dilation:
+      if (this->get_parameters().enable_prescribed_dilation
+          && out.template get_additional_output<MaterialModel::PrescribedPlasticDilation<dim>>() == nullptr)
+        {
+          out.additional_outputs.push_back(
+            std_cxx14::make_unique<MaterialModel::PrescribedPlasticDilation<dim>> (n_points));
+        }
+
+      Assert(!this->get_parameters().enable_prescribed_dilation
+             ||
+             out.template get_additional_output<MaterialModel::PrescribedPlasticDilation<dim> >()->dilation.size()
+             == n_points, ExcInternalError());
     }
   }
 }
@@ -367,6 +401,14 @@ namespace aspect
 
       const MaterialModel::AdditionalMaterialOutputsStokesRHS<dim>
       *force = material_model_outputs.template get_additional_output<MaterialModel::AdditionalMaterialOutputsStokesRHS<dim> >();
+      
+      const MaterialModel::PrescribedPlasticDilation<dim>
+      *prescribed_dilation = material_model_outputs.template get_additional_output<MaterialModel::PrescribedPlasticDilation<dim> >();
+
+      /* Add the latent heat source term released by crystallization of the melt lens and 
+      heating by melt injection into the right-hand side of energy conservation equation. 
+      The equation of latent heat calculation is same as the eq. 7 in Theissen et al., 2011. 
+      */
 
       for (unsigned int q=0; q<heating_model_outputs.heating_source_terms.size(); ++q)
         {
@@ -374,11 +416,20 @@ namespace aspect
           heating_model_outputs.lhs_latent_heat_terms[q] = 0.0;
           heating_model_outputs.rates_of_temperature_change[q] = 0.0;
 
-          if(force != nullptr)
-          heating_model_outputs.heating_source_terms[q] =
-            - force->rhs_p[q] * (latent_heat_of_crystallization +
+          if(prescribed_dilation != nullptr)
+          {
+            if (this->convert_output_to_years())
+              heating_model_outputs.heating_source_terms[q] =
+                prescribed_dilation->dilation[q] / year_in_seconds * (latent_heat_of_crystallization +
                                (temperature_of_injected_melt - material_model_inputs.temperature[q])
                                * material_model_outputs.densities[q] * material_model_outputs.specific_heat[q]);
+            else
+              heating_model_outputs.heating_source_terms[q] =
+                prescribed_dilation->dilation[q] * (latent_heat_of_crystallization +
+                               (temperature_of_injected_melt - material_model_inputs.temperature[q])
+                               * material_model_outputs.densities[q] * material_model_outputs.specific_heat[q]);
+
+          } 
         }
     }
 
@@ -405,8 +456,6 @@ namespace aspect
       prm.leave_subsection();
     }
 
-
-
     template <int dim>
     void
     LatentHeatInjection<dim>::parse_parameters (ParameterHandler &prm)
@@ -425,30 +474,28 @@ namespace aspect
   }
 }
 
-
 // explicit instantiations
 namespace aspect
 {
   namespace MaterialModel
   {
-    ASPECT_REGISTER_MATERIAL_MODEL(DilationTerm,
-                                   "dilation term",
+    ASPECT_REGISTER_MATERIAL_MODEL(PrescribedDilation,
+                                   "prescribed dilation",
                                    "This material model uses a ``Base model'' from which material properties are "
-                                   "derived. It then adds source terms in the mass conservation equation "
-                                   "that describe the addition of melt to the model. "
+                                   "derived. It then adds source terms in the Stokes equation "
+                                   "that describe a dike injection of melt to the model. "
                                    "The terms are described in Theissen-Krah et al., 2011.")
   }
-
 
   namespace HeatingModel
   {
     ASPECT_REGISTER_HEATING_MODEL(LatentHeatInjection,
                                   "latent heat injection",
                                   "Latent heat release due to the injection of melt into the model. "
-                                  "This heating model takes the source term added to the mass "
-                                  "conservation equation and adds the corresponding source term to "
-                                  "the temperature equation. This source term includes both the "
-                                  "effect of latent heat release upon crystallization and the fact "
-                                  "that injected material might have a diffeent temperature.")
+                                  "This heating model takes the source term added to the Stokes "
+                                  "equation and adds the corresponding source term to the energy "
+                                  "equation. This source term includes both the effect of latent "
+                                  "heat release upon crystallization and the fact that inected "
+                                  "material might have a diffeent temperature.")
   }
 }
