@@ -418,17 +418,7 @@ namespace aspect
 
           if(prescribed_dilation != nullptr)
           {
-            if (this->convert_output_to_years())
-              heating_model_outputs.heating_source_terms[q] =
-                prescribed_dilation->dilation[q] / year_in_seconds * (latent_heat_of_crystallization +
-                               (temperature_of_injected_melt - material_model_inputs.temperature[q])
-                               * material_model_outputs.densities[q] * material_model_outputs.specific_heat[q]);
-            else
-              heating_model_outputs.heating_source_terms[q] =
-                prescribed_dilation->dilation[q] * (latent_heat_of_crystallization +
-                               (temperature_of_injected_melt - material_model_inputs.temperature[q])
-                               * material_model_outputs.densities[q] * material_model_outputs.specific_heat[q]);
-
+            heating_model_outputs.heating_source_terms[q] = prescribed_dilation->dilation[q] * (latent_heat_of_crystallization + (temperature_of_injected_melt - material_model_inputs.temperature[q]) * material_model_outputs.densities[q] * material_model_outputs.specific_heat[q]);
           } 
         }
     }
